@@ -1,0 +1,44 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans     
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+        http://www.springframework.org/schema/context 
+        http://www.springframework.org/schema/context/spring-context-3.0.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd">
+
+	<context:property-placeholder location="classpath:AwsCredentials.properties"
+		ignore-unresolvable="true" system-properties-mode="OVERRIDE" />
+
+	<bean id="credentialsProviderBean" class="com.amazonaws.auth.DefaultAWSCredentialsProviderChain" />
+
+	<bean id="credentials"
+		class="com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider">
+	</bean>
+
+	<bean id="connectionFactoryBuilder"
+		class="com.amazon.sqs.javamessaging.SQSConnectionFactory$Builder">
+		<property name="regionName" value="us-west-2" />
+		<property name="numberOfMessagesToPrefetch" value="5" />
+		<property name="awsCredentialsProvider" ref="credentials" />
+	</bean>
+
+	<bean id="s3Client" class="com.amazonaws.services.s3.AmazonS3Client">
+		<constructor-arg>
+			<bean class="com.amazonaws.auth.BasicAWSCredentials">
+				<constructor-arg name="accessKey" value="${accessKey}" />
+				<constructor-arg name="secretKey" value="${secretKey}" />
+			</bean>
+		</constructor-arg>
+	</bean>
+
+	<bean id="connectionFactory" class="com.amazon.sqs.javamessaging.SQSConnectionFactory"
+		factory-bean="connectionFactoryBuilder" factory-method="build" />
+
+	<bean id="connection" class="javax.jms.Connection" factory-bean="connectionFactory"
+		factory-method="createConnection" init-method="start" destroy-method="close" />
+
+
+</beans>
